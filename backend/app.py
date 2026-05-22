@@ -1,7 +1,37 @@
 from flask import Flask, render_template, request, jsonify
-import math
+from flask_cors import CORS
 
 app = Flask(__name__)
+
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CORS(app, origins=origins)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Vehicle(Base):
+    __tablename__ = "vehicles"
+
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    mass: Mapped[float] = mapped_column(Float)
+    speed: Mapped[float] = mapped_column(Float)
+    rolling_resistance: Mapped[float] = mapped_column(Float)
+    wheel_radius: Mapped[float] = mapped_column(Float)
+    drag_coefficient: Mapped[float] = mapped_column(Float)
+    frontal_area: Mapped[float] = mapped_column(Float)
+    inefficiency: Mapped[float] = mapped_column(Float)
+    regen_efficiency: Mapped[float] = mapped_column(Float)
+    battery_voltage: Mapped[float] = mapped_column(Float)
+    charger_efficiency: Mapped[float] = mapped_column(Float)
+    bms_losses: Mapped[float] = mapped_column(Float)
+    thermal_losses: Mapped[float] = mapped_column(Float)
+
 
 def calculate_energy(mass, delta_h, distance, speed_kmh, rolling_resistance_mm, wheel_radius_mm,
                      drag_coefficient, frontal_area_m2, air_density, inefficiency_percent, 
@@ -70,6 +100,10 @@ def calculate_battery(voltage, energy_wh, charger_efficiency, bms_losses, therma
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/vehicles')
+def vehicles():
+    pass
 
 @app.route('/calculate', methods=['POST'])
 def calculate():

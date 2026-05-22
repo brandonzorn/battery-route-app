@@ -1,27 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import SidebarSection from './SidebarSection.vue';
-import type { RouteData } from '../types/calculator';
+import type { RouteData } from '../types/route';
 
 const props = defineProps<{
   route: RouteData;
   hasStart: boolean;
   hasEnd: boolean;
+  isElevationLoading: boolean;
+  elevationError: string | null;
 }>();
 
 defineEmits<{
   (e: 'reset'): void;
 }>();
-
-const statusMessage = computed(() => {
-  if (!props.hasStart) {
-    return '🗺️ <strong>Статус:</strong> Ожидание маршрута<br>📍 Нажмите <span class="key-hint">Ctrl</span> + клик для выбора старта';
-  }
-  if (props.hasStart && !props.hasEnd) {
-    return '✅ <strong>Статус:</strong> СТАРТ выбран<br>📍 Нажмите <span class="key-hint">Ctrl</span> + клик для выбора ФИНИША';
-  }
-  return `✅ <strong>Маршрут построен!</strong><br>📏 Расстояние: ${props.route.distance} км<br>🗺️ Перетаскивайте карту для навигации`;
-});
 </script>
 
 <template>
@@ -33,20 +24,38 @@ const statusMessage = computed(() => {
       • <strong><span class="key-hint">⌘ Cmd</span> + клик</strong> — на Mac
     </div>
 
-    <div class="input-group">
+    <div v-if="route.distance" class="input-group">
       <label><i class="fas fa-road"></i> Расстояние, км</label>
       <input type="number" :value="route.distance" step="0.1" readonly>
     </div>
-    <div class="input-group">
+    <div v-if="route.delta_h" class="input-group">
       <label><i class="fas fa-mountain"></i> Набор высоты, м</label>
       <input type="number" :value="route.delta_h" step="10" readonly>
     </div>
-    <div class="input-group">
+    <div v-if="route.total_descent" class="input-group">
       <label><i class="fas fa-mountain"></i> Спуск, м</label>
       <input type="number" :value="route.total_descent" step="10" readonly>
     </div>
 
-    <div class="route-info" v-html="statusMessage"></div>
+    <div v-if="isElevationLoading" class="loading">
+      <div class="text-center">⏳ Получение высоты...</div>
+    </div>
+
+    <div v-if="elevationError" class="error">
+      <div class="text-center">❌ Ошибка получения высоты: {{ elevationError }}</div>
+    </div>
+
+    <div class="route-info">
+      <span v-if="!props.hasStart">
+        🗺️ <strong>Ожидание маршрута</strong><br>📍 Нажмите <span class="key-hint">Ctrl</span> + клик для выбора старта
+      </span>
+      <span v-else-if="props.hasStart && !props.hasEnd">
+        ✅ <strong>СТАРТ выбран</strong><br>📍 Нажмите <span class="key-hint">Ctrl</span> + клик для выбора ФИНИША
+      </span>
+      <span v-else>
+        ✅ <strong>Маршрут построен!</strong><br>📏 Расстояние: {{ props.route.distance }} км<br>🗺️ Перетаскивайте карту для навигации
+      </span>
+    </div>
 
     <div class="btn-group">
       <button @click="$emit('reset')" class="btn-danger">

@@ -1,57 +1,81 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, onUnmounted } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 
 import RouteManager from './components/RouteManager.vue';
 import VehicleParams from './components/VehicleParams.vue';
 import ResultsDisplay from './components/ResultsDisplay.vue';
 
-import { apiService } from './services/api';
-import type { VehicleConfig, RouteData, CalculationResult } from './types/calculator';
+import { fetchElevationProfile, calculateBattery } from './services/api';
+import type { VehicleConfig, CalculationResult } from './types/calculator';
+import type { RouteData } from './types/route';
 
 const mapRef = ref<HTMLDivElement | null>(null);
 let mapInstance: L.Map | null = null;
-let routingControl: any = null;
+let routingControl: L.Routing.Control | null = null;
 
 const startPoint = ref<L.LatLng | null>(null);
 const endPoint = ref<L.LatLng | null>(null);
+
 let startMarker: L.Marker | null = null;
-let endMarker = null as L.Marker | null;
+let endMarker: L.Marker | null = null;
 
 const routeData = reactive<RouteData>({ distance: 0, delta_h: 0, total_descent: 0 });
 const vehicleConfig = ref<VehicleConfig>({
-  mass: 100, speed: 25, rolling_resistance: 2, wheel_radius: 350,
+  name: "", mass: 100, speed: 25, rolling_resistance: 2, wheel_radius: 350,
   drag_coefficient: 1.0, frontal_area: 0.4, inefficiency: 10, regen_efficiency: 10,
   battery_voltage: 48, charger_efficiency: 85, bms_losses: 5, thermal_losses: 5
 });
 
 const calcResult = ref<CalculationResult | null>(null);
 const isLoading = ref(false);
+const error = ref<string | null>(null);
+
+const isElevationLoading = ref(false);
+const elevationError = ref<string | null>(null);
+
+let elevationController: AbortController | null = null;
+let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   if (!mapRef.value) return;
 
   mapInstance = L.map(mapRef.value).setView([55.75, 37.62], 12);
-  mapInstance.invalidateSize();
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap | EV Battery Calculator',
-    maxZoom: 19
-  }).addTo(mapInstance);
+  L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
+    {attribution: '&copy; OpenStreetMap | EV Battery Calculator', maxZoom: 19}
+  ).addTo(mapInstance);
 
   mapInstance.on('click', onMapClick);
 
+  resizeObserver = new ResizeObserver(() => {
+    if (mapInstance) {
+      mapInstance.invalidateSize();
+    }
+  });
+  resizeObserver.observe(mapRef.value);
 });
 
-const onMapClick = (e: L.LeafletMouseEvent) => {
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+  elevationController?.abort();
+  if (mapInstance) {
+    mapInstance.off('click', onMapClick);
+    mapInstance.remove();
+  }
+});
+
+function onMapClick(e: L.LeafletMouseEvent) {
   const isCtrlPressed = e.originalEvent.ctrlKey || e.originalEvent.metaKey;
-  
   if (!isCtrlPressed) {
     showTempPopup(e.latlng, '💡 Для установки точки нажмите <strong>Ctrl + клик</strong>');
     return;
   }
-  
   if (!startPoint.value) {
     setStartPoint(e.latlng);
   } else if (!endPoint.value) {
@@ -59,9 +83,9 @@ const onMapClick = (e: L.LeafletMouseEvent) => {
   } else {
     showTempPopup(e.latlng, '⚠️ Маршрут уже построен! Нажмите "Сбросить"');
   }
-};
+}
 
-const setStartPoint = (latlng: L.LatLng) => {
+function setStartPoint(latlng: L.LatLng) {
   if (!mapInstance) return;
   startPoint.value = latlng;
   startMarker = L.marker(latlng, {
@@ -71,9 +95,9 @@ const setStartPoint = (latlng: L.LatLng) => {
       iconSize: [18, 18]
     })
   }).addTo(mapInstance);
-};
+}
 
-const setEndPoint = (latlng: L.LatLng) => {
+function setEndPoint(latlng: L.LatLng) {
   if (!mapInstance || !startPoint.value) return;
   endPoint.value = latlng;
   endMarker = L.marker(latlng, {
@@ -85,32 +109,48 @@ const setEndPoint = (latlng: L.LatLng) => {
   }).addTo(mapInstance);
 
   buildRoute();
-};
+}
 
-const buildRoute = () => {
+function buildRoute() {
   if (!mapInstance || !startPoint.value || !endPoint.value) return;
 
   routingControl = L.Routing.control({
     waypoints: [startPoint.value, endPoint.value],
+    routeWhileDragging: false,
     show: false,
-    router: (L.Routing as any).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
+    router: (L.Routing).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
   }).addTo(mapInstance);
 
   routingControl.on('routesfound', async (e: any) => {
+    elevationController?.abort();
+    elevationController = new AbortController();
+
     const route = e.routes[0];
     routeData.distance = parseFloat((route.summary.totalDistance / 1000).toFixed(1));
     
     try {
-      const { ascent, descent } = await apiService.fetchElevationProfile(route.coordinates);
+      isElevationLoading.value = true;
+      elevationError.value = null;
+
+      const { ascent, descent } = await fetchElevationProfile(route.coordinates, elevationController.signal);
       routeData.delta_h = ascent;
       routeData.total_descent = descent;
-    } catch (err) {
-      console.error('Ошибка API высот:', err);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+          elevationError.value = e?.message ?? "Неизвестная ошибка";
+          console.error("Ошибка API высот:", e);
+      }
+    } finally {
+      isElevationLoading.value = false;
     }
+  });
+
+  routingControl.on('routingerror', async (e: any) => {
+    error.value = e
   });
 };
 
-const resetRoute = () => {
+function resetRoute() {
   if (!mapInstance) return;
   if (routingControl) mapInstance.removeControl(routingControl);
   if (startMarker) mapInstance.removeLayer(startMarker);
@@ -124,7 +164,7 @@ const resetRoute = () => {
   calcResult.value = null;
 };
 
-const handleCalculate = async () => {
+async function handleCalculate() {
   if (routeData.distance === 0) {
     alert('⚠️ Сначала постройте маршрут! Нажмите Ctrl + клик для выбора точек.');
     return;
@@ -132,7 +172,7 @@ const handleCalculate = async () => {
 
   isLoading.value = true;
   try {
-    calcResult.value = await apiService.calculateBattery({
+    calcResult.value = await calculateBattery({
       ...vehicleConfig.value,
       ...routeData
     });
@@ -143,7 +183,7 @@ const handleCalculate = async () => {
   }
 };
 
-const showTempPopup = (latlng: L.LatLng, msg: string) => {
+function showTempPopup(latlng: L.LatLng, msg: string) {
   if (!mapInstance) return;
   const popup = L.popup().setLatLng(latlng).setContent(msg).openOn(mapInstance);
   setTimeout(() => mapInstance?.closePopup(popup), 2000);
@@ -166,6 +206,8 @@ const showTempPopup = (latlng: L.LatLng, msg: string) => {
           :route="routeData" 
           :has-start="!!startPoint"
           :has-end="!!endPoint"
+          :isElevationLoading="isElevationLoading"
+          :elevation-error="elevationError"
           @reset="resetRoute" 
         />
 

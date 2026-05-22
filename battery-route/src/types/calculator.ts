@@ -1,4 +1,5 @@
 export interface VehicleConfig {
+  name: string;
   mass: number;
   speed: number;
   rolling_resistance: number;
@@ -11,12 +12,6 @@ export interface VehicleConfig {
   charger_efficiency: number;
   bms_losses: number;
   thermal_losses: number;
-}
-
-export interface RouteData {
-  distance: number;
-  delta_h: number;
-  total_descent: number;
 }
 
 export interface CalculationResult {

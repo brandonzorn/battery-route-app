@@ -1,15 +1,24 @@
 import axios from 'axios';
-import type { VehicleConfig, RouteData, CalculationResult } from '../types/calculator';
+import type { VehicleConfig, CalculationResult } from '../types/calculator';
+import type { RouteData, Coordinate, Elevation } from '../types/route';
 
-const ELEVATION_API_URL = 'https://api.open-elevation.com/api/v1/lookup';
 
-export const apiService = {
-  async fetchElevationProfile(coordinates: { lat: number; lng: number }[]): Promise<{ ascent: number; descent: number }> {
-    const points = coordinates.filter((_, i) => i % 10 === 0).slice(0, 100);
+const API_BASE = "http://localhost:5000/";
+const ELEVATION_API_BASE = 'https://api.open-elevation.com/api/v1/';
 
-    const response = await axios.post<{ results: { elevation: number }[] }>(ELEVATION_API_URL, {
-      locations: points.map(p => ({ latitude: p.lat, longitude: p.lng }))
-    });
+const api = axios.create({
+    baseURL: API_BASE,
+});
+const elevationApi = axios.create({
+  baseURL: ELEVATION_API_BASE
+});
+
+export async function fetchElevationProfile(coordinates: Coordinate[], signal?: AbortSignal): Promise<Elevation> {
+  const points = coordinates.filter((_, i) => i % 10 === 0).slice(0, 25);
+
+    const response = await elevationApi.post<{results: {elevation: number}[]}>("/lookup", { 
+      locations: points.map(p => ({ latitude: p.lat, longitude: p.lng })) }, { signal }
+    );
 
     const elevations = response.data.results.map(r => r.elevation);
     let ascent = 0;
@@ -22,11 +31,9 @@ export const apiService = {
     }
 
     return { ascent: Math.round(ascent), descent: Math.round(descent) };
-  },
+}
 
-
-  async calculateBattery(payload: VehicleConfig & RouteData): Promise<CalculationResult> {
-    const response = await axios.post<CalculationResult>('/calculate', payload);
-    return response.data;
-  }
-};
+export async function calculateBattery(payload: VehicleConfig & RouteData, signal?: AbortSignal): Promise<CalculationResult> {
+  const response = await api.post<CalculationResult>('/calculate', payload, { signal });
+  return response.data;
+}
