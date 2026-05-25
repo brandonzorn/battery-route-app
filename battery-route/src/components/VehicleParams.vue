@@ -1,50 +1,33 @@
 <script setup lang="ts">
 import SidebarSection from './SidebarSection.vue';
-import type { VehicleConfig, PresetType } from '../types/calculator';
-import { onMounted } from 'vue';
+import type { VehicleConfig } from '../types/calculator';
+import { useVehicleParams } from '../composables/useVehicleParams';
 
 const modelValue = defineModel<VehicleConfig>({ required: true });
 
-const PRESETS: Record<PresetType, VehicleConfig> = {
-  bike: {
-    name: "", mass: 100, speed: 25, rolling_resistance: 2, wheel_radius: 350,
-    drag_coefficient: 1.0, frontal_area: 0.4, inefficiency: 10, regen_efficiency: 10,
-    battery_voltage: 48, charger_efficiency: 85, bms_losses: 5, thermal_losses: 5
-  },
-  car: {
-    name: "", mass: 1500, speed: 60, rolling_resistance: 2, wheel_radius: 320,
-    drag_coefficient: 0.35, frontal_area: 2.2, inefficiency: 10, regen_efficiency: 60,
-    battery_voltage: 400, charger_efficiency: 85, bms_losses: 5, thermal_losses: 5
-  },
-  scooter: {
-    name: "", mass: 85, speed: 20, rolling_resistance: 2.5, wheel_radius: 200,
-    drag_coefficient: 1.1, frontal_area: 0.3, inefficiency: 10, regen_efficiency: 5,
-    battery_voltage: 36, charger_efficiency: 85, bms_losses: 5, thermal_losses: 5
-  }
-};
+const { vehicles, isLoading, error } = useVehicleParams();
 
-onMounted(() => {
-  selectPreset("bike");
-});
 
-const selectPreset = (type: PresetType) => {
-  modelValue.value = { ...PRESETS[type] };
-};
+function selectPreset(index: number) {
+  modelValue.value = vehicles.value[index];
+}
 </script>
 
 <template>
   <SidebarSection title="Транспортное средство" icon="fas fa-motorcycle">
-    <div class="preset-buttons">
-    <button class="preset-btn" @click="selectPreset('bike')">
-      <i class="fas fa-bicycle"></i> Вело
-    </button>
-    <button class="preset-btn" @click="selectPreset('car')">
-      <i class="fas fa-car"></i> Авто
-    </button>
-    <button class="preset-btn" @click="selectPreset('scooter')">
-      <i class="fas fa-motorcycle"></i> Самокат
-    </button>
-  </div>
+    <div v-if="vehicles" class="preset-buttons">
+      <button v-for="(vehicle, index) in vehicles" :key="index" class="preset-btn" @click="selectPreset(index)">
+        <i class="fas fa-bicycle"></i> {{ vehicle.kind }}
+      </button>
+    </div>
+    <div v-if="isLoading" class="loading">
+      <div class="text-center">⏳ Получение ...</div>
+    </div>
+
+    <div v-if="error" class="error">
+      <div class="text-center">❌ Ошибка: {{ error }}</div>
+    </div>
+
     <div class="input-group">
       <label><i class="fas fa-weight-hanging"></i> Масса с водителем, кг</label>
       <input type="number" v-model.number="modelValue.mass" step="10">

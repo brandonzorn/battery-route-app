@@ -25,7 +25,7 @@ let endMarker: L.Marker | null = null;
 
 const routeData = reactive<RouteData>({ distance: 0, delta_h: 0, total_descent: 0 });
 const vehicleConfig = ref<VehicleConfig>({
-  name: "", mass: 100, speed: 25, rolling_resistance: 2, wheel_radius: 350,
+  kind: "", name: "", mass: 100, speed: 25, rolling_resistance: 2, wheel_radius: 350,
   drag_coefficient: 1.0, frontal_area: 0.4, inefficiency: 10, regen_efficiency: 10,
   battery_voltage: 48, charger_efficiency: 85, bms_losses: 5, thermal_losses: 5
 });
@@ -66,6 +66,7 @@ onUnmounted(() => {
   elevationController?.abort();
   if (mapInstance) {
     mapInstance.off('click', onMapClick);
+    if (routingControl) mapInstance.removeControl(routingControl);
     mapInstance.remove();
   }
 });
@@ -113,22 +114,34 @@ function setEndPoint(latlng: L.LatLng) {
 
 function buildRoute() {
   if (!mapInstance || !startPoint.value || !endPoint.value) return;
+  if (routingControl) {
+    mapInstance.removeControl(routingControl);
+  }
+
+  error.value = null;
+
+  const plan = L.Routing.plan([startPoint.value, endPoint.value], {addWaypoints: false, draggableWaypoints: false})
 
   routingControl = L.Routing.control({
-    waypoints: [startPoint.value, endPoint.value],
     routeWhileDragging: false,
     show: false,
+    plan: plan,
     router: (L.Routing).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
   }).addTo(mapInstance);
 
-  routingControl.on('routesfound', async (e: any) => {
+  routingControl.on('routesfound', async (event: any) => {
     elevationController?.abort();
     elevationController = new AbortController();
 
-    const route = e.routes[0];
-    routeData.distance = parseFloat((route.summary.totalDistance / 1000).toFixed(1));
-    
+    const route: L.Routing.IRoute = event.routes[0];
+    const line = L.Routing.line(route, {addWaypoints: false, extendToWaypoints: false, missingRouteTolerance: 1})
+
     try {
+      if (!route.summary || !route.coordinates) {
+        throw Error("No data in route")
+      }
+      routeData.distance = parseFloat((route.summary.totalDistance / 1000).toFixed(1));
+
       isElevationLoading.value = true;
       elevationError.value = null;
 
@@ -145,16 +158,32 @@ function buildRoute() {
     }
   });
 
-  routingControl.on('routingerror', async (e: any) => {
-    error.value = e
+  routingControl.on('routingerror', (err: any) => {
+    error.value = err?.error?.message ?? "Ошибка построения маршрута";
+    console.error("Routing error:", err);
   });
 };
 
 function resetRoute() {
+  elevationController?.abort();
+  isElevationLoading.value = false;
+  elevationError.value = null;
+  error.value = null;
+
   if (!mapInstance) return;
-  if (routingControl) mapInstance.removeControl(routingControl);
-  if (startMarker) mapInstance.removeLayer(startMarker);
-  if (endMarker) mapInstance.removeLayer(endMarker);
+  
+  if (routingControl) {
+    mapInstance.removeControl(routingControl);
+    routingControl = null;
+  }
+  if (startMarker) {
+    mapInstance.removeLayer(startMarker);
+    startMarker = null;
+  }
+  if (endMarker) {
+    mapInstance.removeLayer(endMarker);
+    endMarker = null;
+  }
 
   startPoint.value = null;
   endPoint.value = null;
@@ -162,7 +191,7 @@ function resetRoute() {
   routeData.delta_h = 0;
   routeData.total_descent = 0;
   calcResult.value = null;
-};
+}
 
 async function handleCalculate() {
   if (routeData.distance === 0) {

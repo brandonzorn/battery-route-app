@@ -1,4 +1,5 @@
 export interface VehicleConfig {
+  kind: string;
   name: string;
   mass: number;
   speed: number;

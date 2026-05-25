@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { VehicleConfig, CalculationResult } from '../types/calculator';
+import type { VehicleConfig, CalculationResult, PresetType } from '../types/calculator';
 import type { RouteData, Coordinate, Elevation } from '../types/route';
 
 
@@ -35,5 +35,10 @@ export async function fetchElevationProfile(coordinates: Coordinate[], signal?: 
 
 export async function calculateBattery(payload: VehicleConfig & RouteData, signal?: AbortSignal): Promise<CalculationResult> {
   const response = await api.post<CalculationResult>('/calculate', payload, { signal });
+  return response.data;
+}
+
+export async function fetchVehicles(signal?: AbortSignal): Promise<VehicleConfig[]> {
+  const response = await api.get<VehicleConfig[]>('/vehicles', { signal });
   return response.data;
 }

@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+from configs import PRESETS
 
 app = Flask(__name__)
 
@@ -9,28 +11,6 @@ origins = [
 ]
 
 CORS(app, origins=origins)
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-class Vehicle(Base):
-    __tablename__ = "vehicles"
-
-    name: Mapped[str] = mapped_column(String, primary_key=True)
-    mass: Mapped[float] = mapped_column(Float)
-    speed: Mapped[float] = mapped_column(Float)
-    rolling_resistance: Mapped[float] = mapped_column(Float)
-    wheel_radius: Mapped[float] = mapped_column(Float)
-    drag_coefficient: Mapped[float] = mapped_column(Float)
-    frontal_area: Mapped[float] = mapped_column(Float)
-    inefficiency: Mapped[float] = mapped_column(Float)
-    regen_efficiency: Mapped[float] = mapped_column(Float)
-    battery_voltage: Mapped[float] = mapped_column(Float)
-    charger_efficiency: Mapped[float] = mapped_column(Float)
-    bms_losses: Mapped[float] = mapped_column(Float)
-    thermal_losses: Mapped[float] = mapped_column(Float)
 
 
 def calculate_energy(mass, delta_h, distance, speed_kmh, rolling_resistance_mm, wheel_radius_mm,
@@ -97,15 +77,12 @@ def calculate_battery(voltage, energy_wh, charger_efficiency, bms_losses, therma
         'total_efficiency': round(total_efficiency * 100, 1)
     }
 
-@app.route('/')
-def index():
-    return render_template('index.html')
 
-@app.route('/vehicles')
+@app.route("/vehicles", methods=["GET"])
 def vehicles():
-    pass
+    return jsonify(PRESETS)
 
-@app.route('/calculate', methods=['POST'])
+@app.route('/calculate', methods=["POST"])
 def calculate():
     data = request.json
     
