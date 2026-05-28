@@ -3,7 +3,7 @@ import { ref, onMounted, reactive, onUnmounted } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
-import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
 import RouteManager from './components/RouteManager.vue';
 import VehicleParams from './components/VehicleParams.vue';
@@ -25,9 +25,9 @@ let endMarker: L.Marker | null = null;
 
 const routeData = reactive<RouteData>({ distance: 0, delta_h: 0, total_descent: 0 });
 const vehicleConfig = ref<VehicleConfig>({
-  kind: "", name: "", mass: 100, speed: 25, rolling_resistance: 2, wheel_radius: 350,
-  drag_coefficient: 1.0, frontal_area: 0.4, inefficiency: 10, regen_efficiency: 10,
-  battery_voltage: 48, charger_efficiency: 85, bms_losses: 5, thermal_losses: 5
+  kind: "", name: "", mass: 0, speed: 0, rolling_resistance: 0, wheel_radius: 0,
+  drag_coefficient: 0, frontal_area: 0, inefficiency: 0, regen_efficiency: 0,
+  battery_voltage: 0, charger_efficiency: 0, bms_losses: 0, thermal_losses: 0
 });
 
 const calcResult = ref<CalculationResult | null>(null);
@@ -46,7 +46,7 @@ onMounted(() => {
   mapInstance = L.map(mapRef.value).setView([55.75, 37.62], 12);
   L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
-    {attribution: '&copy; OpenStreetMap | EV Battery Calculator', maxZoom: 19}
+    { attribution: '&copy; OpenStreetMap | EV Battery Calculator', maxZoom: 19 }
   ).addTo(mapInstance);
 
   mapInstance.on('click', onMapClick);
@@ -120,12 +120,20 @@ function buildRoute() {
 
   error.value = null;
 
-  const plan = L.Routing.plan([startPoint.value, endPoint.value], {addWaypoints: false, draggableWaypoints: false})
+  const plan = L.Routing.plan([startPoint.value, endPoint.value], {
+    createMarker: () => false, 
+    addWaypoints: false, 
+    draggableWaypoints: false
+  });
 
   routingControl = L.Routing.control({
     routeWhileDragging: false,
     show: false,
     plan: plan,
+    lineOptions: {
+      styles: [{ color: '#3388ff', opacity: 0.8, weight: 6 }],
+      addWaypoints: false 
+    } as any,
     router: (L.Routing).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
   }).addTo(mapInstance);
 
@@ -134,11 +142,10 @@ function buildRoute() {
     elevationController = new AbortController();
 
     const route: L.Routing.IRoute = event.routes[0];
-    const line = L.Routing.line(route, {addWaypoints: false, extendToWaypoints: false, missingRouteTolerance: 1})
 
     try {
       if (!route.summary || !route.coordinates) {
-        throw Error("No data in route")
+        throw new Error("Маршрутные данные отсутствуют");
       }
       routeData.distance = parseFloat((route.summary.totalDistance / 1000).toFixed(1));
 
@@ -162,7 +169,7 @@ function buildRoute() {
     error.value = err?.error?.message ?? "Ошибка построения маршрута";
     console.error("Routing error:", err);
   });
-};
+}
 
 function resetRoute() {
   elevationController?.abort();
@@ -210,13 +217,13 @@ async function handleCalculate() {
   } finally {
     isLoading.value = false;
   }
-};
+}
 
 function showTempPopup(latlng: L.LatLng, msg: string) {
   if (!mapInstance) return;
   const popup = L.popup().setLatLng(latlng).setContent(msg).openOn(mapInstance);
   setTimeout(() => mapInstance?.closePopup(popup), 2000);
-};
+}
 </script>
 
 <template>
@@ -261,4 +268,3 @@ function showTempPopup(latlng: L.LatLng, msg: string) {
     </div>
   </div>
 </template>
-
