@@ -1,4 +1,6 @@
 *.pyc
 *.log
+*.db
+.env
 .idea
 logs
