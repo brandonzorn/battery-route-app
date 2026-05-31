@@ -38,6 +38,14 @@
   background: var(--bg-main) !important;
 }
 
+.leaflet-routing-container {
+  display: none !important;
+}
+
+.leaflet-attribution-flag {
+  opacity: 0;
+}
+
 @media (max-width: 1024px) {
   .sidebar-content {
     padding: 20px 16px;

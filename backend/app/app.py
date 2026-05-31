@@ -2,14 +2,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pydantic import ValidationError
 
-from configs import ORIGINS, PRESETS
+from configs import ALLOWED_ORIGINS, DEBUG, PRESETS
 from database import check_db_connection
 from calculation import calculate_energy, calculate_battery
 from typed_models import SimulationInput, SimulationResponse
 
 app = Flask(__name__)
 
-CORS(app, origins=ORIGINS)
+CORS(app, origins=ALLOWED_ORIGINS)
 
 
 @app.route("/vehicles", methods=["GET"])
@@ -37,4 +37,4 @@ def calculate():
 
 if __name__ == "__main__":
     check_db_connection()
-    app.run(debug=False)
+    app.run(debug=DEBUG)

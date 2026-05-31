@@ -13,7 +13,7 @@ class SimulationInput(BaseModel):
     total_descent_m: float = Field(ge=0)
     distance_km: float = Field(ge=0)
     regen_efficiency_percent: float = Field(ge=0, le=100)
-    
+
     battery_voltage_v: float = Field(gt=0)
     charger_efficiency_percent: float = Field(gt=0, le=100)
     bms_losses_percent: float = Field(ge=0, le=100)

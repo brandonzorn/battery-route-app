@@ -31,5 +31,3 @@ export interface CalculationResult {
     total_efficiency_percent: number;
   };
 }
-
-export type PresetType = 'bike' | 'car' | 'scooter';

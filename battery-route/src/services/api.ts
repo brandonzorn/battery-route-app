@@ -1,9 +1,9 @@
 import axios from 'axios';
-import type { VehicleConfig, CalculationResult, PresetType } from '../types/calculator';
+import type { VehicleConfig, CalculationResult } from '../types/calculator';
 import type { RouteData, Coordinate, Elevation } from '../types/route';
 
 
-const API_BASE = "http://localhost:5000/";
+const API_BASE = import.meta.env.VITE_API_BASE;
 const ELEVATION_API_BASE = 'https://api.open-elevation.com/api/v1/';
 
 const api = axios.create({
