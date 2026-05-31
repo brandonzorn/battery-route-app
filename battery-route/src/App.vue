@@ -1,33 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, onUnmounted } from 'vue';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-routing-machine';
-import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-
+import { ref, onMounted, reactive, computed } from 'vue';
 import RouteManager from './components/RouteManager.vue';
 import VehicleParams from './components/VehicleParams.vue';
 import ResultsDisplay from './components/ResultsDisplay.vue';
+import MapContainer from './components/MapContainer.vue';
 
+import { useTheme } from './composables/useTheme';
 import { fetchElevationProfile, calculateBattery } from './services/api';
 import type { VehicleConfig, CalculationResult } from './types/calculator';
 import type { RouteData } from './types/route';
 
-const mapRef = ref<HTMLDivElement | null>(null);
-let mapInstance: L.Map | null = null;
-let routingControl: L.Routing.Control | null = null;
+const { currentTheme, initTheme, toggleTheme } = useTheme();
 
-const startPoint = ref<L.LatLng | null>(null);
-const endPoint = ref<L.LatLng | null>(null);
+const routeData = reactive<RouteData>({ distance_km: 0, delta_h_m: 0, total_descent_m: 0 });
+const hasRoutePoints = computed(() => routeData.distance_km > 0);
 
-let startMarker: L.Marker | null = null;
-let endMarker: L.Marker | null = null;
-
-const routeData = reactive<RouteData>({ distance: 0, delta_h: 0, total_descent: 0 });
 const vehicleConfig = ref<VehicleConfig>({
-  kind: "", name: "", mass: 0, speed: 0, rolling_resistance: 0, wheel_radius: 0,
-  drag_coefficient: 0, frontal_area: 0, inefficiency: 0, regen_efficiency: 0,
-  battery_voltage: 0, charger_efficiency: 0, bms_losses: 0, thermal_losses: 0
+  kind: "", name: "", mass_kg: 0, speed_kmh: 0, rolling_resistance_crr: 0, wheel_radius_mm: 0,
+  drag_coefficient_cx: 0, frontal_area_m2: 0, inefficiency_percent: 0, regen_efficiency_percent: 0,
+  battery_voltage_v: 0, charger_efficiency_percent: 0, bms_losses_percent: 0, thermal_losses_percent: 0
 });
 
 const calcResult = ref<CalculationResult | null>(null);
@@ -38,170 +29,57 @@ const isElevationLoading = ref(false);
 const elevationError = ref<string | null>(null);
 
 let elevationController: AbortController | null = null;
-let resizeObserver: ResizeObserver | null = null;
+const mapResetSignal = ref(false);
 
 onMounted(() => {
-  if (!mapRef.value) return;
-
-  mapInstance = L.map(mapRef.value).setView([55.75, 37.62], 12);
-  L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
-    { attribution: '&copy; OpenStreetMap | EV Battery Calculator', maxZoom: 19 }
-  ).addTo(mapInstance);
-
-  mapInstance.on('click', onMapClick);
-
-  resizeObserver = new ResizeObserver(() => {
-    if (mapInstance) {
-      mapInstance.invalidateSize();
-    }
-  });
-  resizeObserver.observe(mapRef.value);
+  initTheme();
 });
 
-onUnmounted(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-  }
+async function handleRouteFound(data: { coordinates: any[]; distance: number }) {
   elevationController?.abort();
-  if (mapInstance) {
-    mapInstance.off('click', onMapClick);
-    if (routingControl) mapInstance.removeControl(routingControl);
-    mapInstance.remove();
-  }
-});
+  elevationController = new AbortController();
 
-function onMapClick(e: L.LeafletMouseEvent) {
-  const isCtrlPressed = e.originalEvent.ctrlKey || e.originalEvent.metaKey;
-  if (!isCtrlPressed) {
-    showTempPopup(e.latlng, '💡 Для установки точки нажмите <strong>Ctrl + клик</strong>');
-    return;
-  }
-  if (!startPoint.value) {
-    setStartPoint(e.latlng);
-  } else if (!endPoint.value) {
-    setEndPoint(e.latlng);
-  } else {
-    showTempPopup(e.latlng, '⚠️ Маршрут уже построен! Нажмите "Сбросить"');
-  }
-}
-
-function setStartPoint(latlng: L.LatLng) {
-  if (!mapInstance) return;
-  startPoint.value = latlng;
-  startMarker = L.marker(latlng, {
-    icon: L.divIcon({
-      className: 'custom-div-icon',
-      html: '<div style="background-color:#10b981; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 0 4px rgba(0,0,0,0.3);"></div>',
-      iconSize: [18, 18]
-    })
-  }).addTo(mapInstance);
-}
-
-function setEndPoint(latlng: L.LatLng) {
-  if (!mapInstance || !startPoint.value) return;
-  endPoint.value = latlng;
-  endMarker = L.marker(latlng, {
-    icon: L.divIcon({
-      className: 'custom-div-icon',
-      html: '<div style="background-color:#ef4444; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 0 4px rgba(0,0,0,0.3);"></div>',
-      iconSize: [18, 18]
-    })
-  }).addTo(mapInstance);
-
-  buildRoute();
-}
-
-function buildRoute() {
-  if (!mapInstance || !startPoint.value || !endPoint.value) return;
-  if (routingControl) {
-    mapInstance.removeControl(routingControl);
-  }
-
+  routeData.distance_km = data.distance;
   error.value = null;
+  isElevationLoading.value = true;
+  elevationError.value = null;
 
-  const plan = L.Routing.plan([startPoint.value, endPoint.value], {
-    createMarker: () => false, 
-    addWaypoints: false, 
-    draggableWaypoints: false
-  });
-
-  routingControl = L.Routing.control({
-    routeWhileDragging: false,
-    show: false,
-    plan: plan,
-    lineOptions: {
-      styles: [{ color: '#3388ff', opacity: 0.8, weight: 6 }],
-      addWaypoints: false 
-    } as any,
-    router: (L.Routing).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
-  }).addTo(mapInstance);
-
-  routingControl.on('routesfound', async (event: any) => {
-    elevationController?.abort();
-    elevationController = new AbortController();
-
-    const route: L.Routing.IRoute = event.routes[0];
-
-    try {
-      if (!route.summary || !route.coordinates) {
-        throw new Error("Маршрутные данные отсутствуют");
-      }
-      routeData.distance = parseFloat((route.summary.totalDistance / 1000).toFixed(1));
-
-      isElevationLoading.value = true;
-      elevationError.value = null;
-
-      const { ascent, descent } = await fetchElevationProfile(route.coordinates, elevationController.signal);
-      routeData.delta_h = ascent;
-      routeData.total_descent = descent;
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-          elevationError.value = e?.message ?? "Неизвестная ошибка";
-          console.error("Ошибка API высот:", e);
-      }
-    } finally {
-      isElevationLoading.value = false;
+  try {
+    const { ascent, descent } = await fetchElevationProfile(data.coordinates, elevationController.signal);
+    routeData.delta_h_m = ascent;
+    routeData.total_descent_m = descent;
+  } catch (e: any) {
+    if (e?.name !== "AbortError") {
+      elevationError.value = e?.message ?? "Неизвестная ошибка";
     }
-  });
-
-  routingControl.on('routingerror', (err: any) => {
-    error.value = err?.error?.message ?? "Ошибка построения маршрута";
-    console.error("Routing error:", err);
-  });
+  } finally {
+    isElevationLoading.value = false;
+  }
 }
 
-function resetRoute() {
+function handleRoutingError(msg: string) {
+  error.value = msg;
+}
+
+function triggerReset() {
   elevationController?.abort();
+  mapResetSignal.value = true;
+}
+
+function onMapResetComplete() {
+  mapResetSignal.value = false;
   isElevationLoading.value = false;
   elevationError.value = null;
   error.value = null;
 
-  if (!mapInstance) return;
-  
-  if (routingControl) {
-    mapInstance.removeControl(routingControl);
-    routingControl = null;
-  }
-  if (startMarker) {
-    mapInstance.removeLayer(startMarker);
-    startMarker = null;
-  }
-  if (endMarker) {
-    mapInstance.removeLayer(endMarker);
-    endMarker = null;
-  }
-
-  startPoint.value = null;
-  endPoint.value = null;
-  routeData.distance = 0;
-  routeData.delta_h = 0;
-  routeData.total_descent = 0;
+  routeData.distance_km = 0;
+  routeData.delta_h_m = 0;
+  routeData.total_descent_m = 0;
   calcResult.value = null;
 }
 
 async function handleCalculate() {
-  if (routeData.distance === 0) {
+  if (routeData.distance_km === 0) {
     alert('⚠️ Сначала постройте маршрут! Нажмите Ctrl + клик для выбора точек.');
     return;
   }
@@ -218,34 +96,21 @@ async function handleCalculate() {
     isLoading.value = false;
   }
 }
-
-function showTempPopup(latlng: L.LatLng, msg: string) {
-  if (!mapInstance) return;
-  const popup = L.popup().setLatLng(latlng).setContent(msg).openOn(mapInstance);
-  setTimeout(() => mapInstance?.closePopup(popup), 2000);
-}
 </script>
-
 <template>
   <div class="container">
     <div class="sidebar">
       <div class="sidebar-content">
         <div class="header">
-          <div class="logo">
+          <div class="logo" @click="toggleTheme">
             <i class="fas fa-charging-station"></i>
             <h1>EV Battery<br>Calculator</h1>
           </div>
           <div class="subtitle">Расчет батареи для электротранспорта</div>
         </div>
 
-        <RouteManager 
-          :route="routeData" 
-          :has-start="!!startPoint"
-          :has-end="!!endPoint"
-          :isElevationLoading="isElevationLoading"
-          :elevation-error="elevationError"
-          @reset="resetRoute" 
-        />
+        <RouteManager :route="routeData" :has-start="hasRoutePoints" :has-end="hasRoutePoints"
+          :isElevationLoading="isElevationLoading" :elevation-error="elevationError || error" @reset="triggerReset" />
 
         <VehicleParams v-model="vehicleConfig" />
 
@@ -253,18 +118,11 @@ function showTempPopup(latlng: L.LatLng, msg: string) {
           <i class="fas fa-calculator"></i> РАССЧИТАТЬ БАТАРЕЮ
         </button>
 
-        <ResultsDisplay 
-          :result="calcResult" 
-          :loading="isLoading" 
-          :voltage="vehicleConfig.battery_voltage" 
-        />
-        
-        <div style="height: 20px;"></div>
+        <ResultsDisplay :result="calcResult" :loading="isLoading" :voltage="vehicleConfig.battery_voltage_v" />
       </div>
     </div>
 
-    <div class="map-container">
-      <div id="map" ref="mapRef"></div>
-    </div>
+    <MapContainer :theme="currentTheme" :should-reset="mapResetSignal" @update-route="handleRouteFound"
+      @routing-error="handleRoutingError" @reset-complete="onMapResetComplete" />
   </div>
 </template>

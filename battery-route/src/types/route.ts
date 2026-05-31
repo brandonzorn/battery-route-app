@@ -1,7 +1,7 @@
 export interface RouteData {
-  distance: number;
-  delta_h: number;
-  total_descent: number;
+  delta_h_m: number;
+  total_descent_m: number;
+  distance_km: number;
 }
 
 export interface Coordinate {

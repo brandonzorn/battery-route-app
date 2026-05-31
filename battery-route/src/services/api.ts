@@ -7,7 +7,7 @@ const API_BASE = "http://localhost:5000/";
 const ELEVATION_API_BASE = 'https://api.open-elevation.com/api/v1/';
 
 const api = axios.create({
-    baseURL: API_BASE,
+  baseURL: API_BASE,
 });
 const elevationApi = axios.create({
   baseURL: ELEVATION_API_BASE
@@ -16,21 +16,22 @@ const elevationApi = axios.create({
 export async function fetchElevationProfile(coordinates: Coordinate[], signal?: AbortSignal): Promise<Elevation> {
   const points = coordinates.filter((_, i) => i % 10 === 0).slice(0, 25);
 
-    const response = await elevationApi.post<{results: {elevation: number}[]}>("/lookup", { 
-      locations: points.map(p => ({ latitude: p.lat, longitude: p.lng })) }, { signal }
-    );
+  const response = await elevationApi.post<{ results: { elevation: number }[] }>("/lookup", {
+    locations: points.map(p => ({ latitude: p.lat, longitude: p.lng }))
+  }, { signal }
+  );
 
-    const elevations = response.data.results.map(r => r.elevation);
-    let ascent = 0;
-    let descent = 0;
+  const elevations = response.data.results.map(r => r.elevation);
+  let ascent = 0;
+  let descent = 0;
 
-    for (let i = 1; i < elevations.length; i++) {
-      const diff = elevations[i] - elevations[i - 1];
-      if (diff > 0) ascent += diff;
-      else descent -= diff;
-    }
+  for (let i = 1; i < elevations.length; i++) {
+    const diff = elevations[i] - elevations[i - 1];
+    if (diff > 0) ascent += diff;
+    else descent -= diff;
+  }
 
-    return { ascent: Math.round(ascent), descent: Math.round(descent) };
+  return { ascent: Math.round(ascent), descent: Math.round(descent) };
 }
 
 export async function calculateBattery(payload: VehicleConfig & RouteData, signal?: AbortSignal): Promise<CalculationResult> {

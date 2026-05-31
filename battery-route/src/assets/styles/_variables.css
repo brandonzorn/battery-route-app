@@ -1,0 +1,68 @@
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --sidebar-width: clamp(320px, 25vw, 420px);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  --transition-smooth: all 0.15s ease-in-out;
+}
+
+:root,
+[data-theme="light"] {
+  --bg-main: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f4f4f5;
+  --bg-glass-specular: transparent;
+
+  --glass-blur: blur(8px);
+
+  --text-main: #18181b;
+  --text-muted: #71717a;
+  --text-inverse: #ffffff;
+
+  --border-color: #e4e4e7;
+  --border-inner: #f4f4f5;
+  --border-focus: #18181b;
+
+  --scrollbar-thumb: #e4e4e7;
+  --scrollbar-thumb-hover: #d4d4d8;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.04);
+
+  --brand-gradient: #18181b;
+  --danger-gradient: #ef4444;
+}
+
+[data-theme="dark"] {
+  --bg-main: #09090b;
+  --bg-card: #141416;
+  --bg-hover: #1b1b1f;
+  --bg-glass-specular: transparent;
+
+  --glass-blur: blur(8px);
+
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-inverse: #09090b;
+
+  --border-color: #222226;
+  --border-inner: #1b1b1f;
+  --border-focus: #f4f4f5;
+
+  --scrollbar-thumb: #27272a;
+  --scrollbar-thumb-hover: #3f3f46;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --brand-gradient: #f4f4f5;
+  --danger-gradient: #f87171;
+}

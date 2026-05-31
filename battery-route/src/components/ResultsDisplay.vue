@@ -18,24 +18,24 @@ defineProps<{
       <h3><i class="fas fa-chart-line"></i> Энергозатраты на движение</h3>
       <div class="result-item">
         <span class="result-label"><i class="fas fa-mountain"></i> Подъем:</span>
-        <span class="result-value">{{ result.energy.climb_energy }} кДж</span>
+        <span class="result-value">{{ result.energy.climb_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
         <span class="result-label"><i class="fas fa-tire"></i> Трение качения:</span>
-        <span class="result-value">{{ result.energy.rolling_energy }} кДж</span>
+        <span class="result-value">{{ result.energy.rolling_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
         <span class="result-label"><i class="fas fa-wind"></i> Аэродинамика:</span>
-        <span class="result-value">{{ result.energy.air_energy }} кДж</span>
+        <span class="result-value">{{ result.energy.air_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
         <span class="result-label"><i class="fas fa-rocket"></i> Инерция:</span>
-        <span class="result-value">{{ result.energy.inertia_energy }} кДж</span>
+        <span class="result-value">{{ result.energy.inertia_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
         <span class="result-label"><strong>Всего энергии:</strong></span>
         <span class="result-value">
-          <strong>{{ result.energy.total_energy_kj}} кДж / {{ result.energy.total_energy_wh }} Вт·ч</strong>
+          <strong>{{ result.energy.total_energy_kj }} кДж / {{ result.energy.total_energy_wh }} Вт·ч</strong>
         </span>
       </div>
     </div>
@@ -44,7 +44,7 @@ defineProps<{
       <h3><i class="fas fa-battery-full"></i> Расчет батареи</h3>
       <div class="result-item">
         <span class="result-label"><i class="fas fa-charging-station"></i> КПД зарядки:</span>
-        <span class="result-value">{{ result.battery.total_efficiency }}%</span>
+        <span class="result-value">{{ result.battery.total_efficiency_percent }}%</span>
       </div>
       <div class="result-item">
         <span class="result-label"><i class="fas fa-database"></i> Энергия с потерями:</span>
@@ -61,4 +61,3 @@ defineProps<{
     </div>
   </div>
 </template>
-

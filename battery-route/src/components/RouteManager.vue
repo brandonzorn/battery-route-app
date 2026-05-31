@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SidebarSection from './SidebarSection.vue';
-import type { RouteData } from '../types/route';
+import SidebarSection from "./SidebarSection.vue";
+import type { RouteData } from "../types/route";
 
 const props = defineProps<{
   route: RouteData;
@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'reset'): void;
+  (e: "reset"): void;
 }>();
 </script>
 
@@ -24,17 +24,17 @@ defineEmits<{
       • <strong><span class="key-hint">⌘ Cmd</span> + клик</strong> — на Mac
     </div>
 
-    <div v-if="route.distance" class="input-group">
+    <div v-if="route.distance_km" class="input-group">
       <label><i class="fas fa-road"></i> Расстояние, км</label>
-      <input type="number" :value="route.distance" step="0.1" readonly>
+      <input type="number" :value="route.distance_km" step="0.1" readonly>
     </div>
-    <div v-if="route.delta_h" class="input-group">
+    <div v-if="route.delta_h_m" class="input-group">
       <label><i class="fas fa-mountain"></i> Набор высоты, м</label>
-      <input type="number" :value="route.delta_h" step="10" readonly>
+      <input type="number" :value="route.delta_h_m" step="10" readonly>
     </div>
-    <div v-if="route.total_descent" class="input-group">
+    <div v-if="route.total_descent_m" class="input-group">
       <label><i class="fas fa-mountain"></i> Спуск, м</label>
-      <input type="number" :value="route.total_descent" step="10" readonly>
+      <input type="number" :value="route.total_descent_m" step="10" readonly>
     </div>
 
     <div v-if="isElevationLoading" class="loading">
@@ -53,7 +53,8 @@ defineEmits<{
         ✅ <strong>СТАРТ выбран</strong><br>📍 Нажмите <span class="key-hint">Ctrl</span> + клик для выбора ФИНИША
       </span>
       <span v-else>
-        ✅ <strong>Маршрут построен!</strong><br>📏 Расстояние: {{ props.route.distance }} км<br>🗺️ Перетаскивайте карту для навигации
+        ✅ <strong>Маршрут построен!</strong><br>
+        📏 Расстояние: {{ props.route.distance_km }} км<br>🗺️ Перетаскивайте карту для навигации
       </span>
     </div>
 
