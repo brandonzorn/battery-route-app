@@ -4,6 +4,11 @@ import type { RouteData, Coordinate, Elevation } from '../types/route';
 
 
 const API_BASE = import.meta.env.VITE_API_BASE;
+
+if (API_BASE === undefined) {
+  throw Error("API_BASE env variable not found")
+}
+
 const ELEVATION_API_BASE = 'https://api.open-elevation.com/api/v1/';
 
 const api = axios.create({
