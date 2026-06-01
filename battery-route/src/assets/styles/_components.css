@@ -292,3 +292,25 @@ input[readonly] {
 .hidden {
   display: none !important;
 }
+
+.marker {
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid white;
+  box-shadow:0 0 4px rgba(0,0,0,0.3);
+}
+
+.marker-start {
+  background-color:#10b981;
+}
+
+.marker-end {
+  background-color:#ef4444;
+}
+
+.route-line {
+  color: #3388ff;
+  opacity: 0.8;
+  stroke-width: 6;
+}

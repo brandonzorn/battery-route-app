@@ -94,8 +94,7 @@ function setStartPoint(latlng: L.LatLng) {
   startPoint.value = latlng;
   startMarker = L.marker(latlng, {
     icon: L.divIcon({
-      className: 'custom-div-icon',
-      html: '<div style="background-color:#10b981; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 0 4px rgba(0,0,0,0.3);"></div>',
+      className: 'marker marker-start',
       iconSize: [18, 18]
     })
   }).addTo(mapInstance);
@@ -106,8 +105,7 @@ function setEndPoint(latlng: L.LatLng) {
   endPoint.value = latlng;
   endMarker = L.marker(latlng, {
     icon: L.divIcon({
-      className: 'custom-div-icon',
-      html: '<div style="background-color:#ef4444; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 0 4px rgba(0,0,0,0.3);"></div>',
+      className: 'marker marker-end',
       iconSize: [18, 18]
     })
   }).addTo(mapInstance);
@@ -131,7 +129,7 @@ function buildRoute() {
     showAlternatives: false,
     plan,
     lineOptions: {
-      styles: [{ color: "#3388ff", opacity: 0.8, weight: 6 }],
+      styles: [{ className: "route-line" }],
       addWaypoints: false
     } as any,
     router: (L.Routing).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
