@@ -2,16 +2,18 @@ from pydantic import BaseModel, Field
 
 
 class SimulationInput(BaseModel):
+    total_ascent_m: float = Field(default=0, ge=0)
+    total_descent_m: float = Field(ge=0)
+    distance_km: float = Field(ge=0)
+
     mass_kg: float = Field(gt=0)
     speed_kmh: float = Field(ge=0)
     rolling_resistance_crr: float = Field(ge=0)
     wheel_radius_mm: float = Field(gt=0)
     drag_coefficient_cx: float = Field(ge=0)
     frontal_area_m2: float = Field(gt=0)
-    inefficiency_percent: float = Field(ge=0)
-    delta_h_m: float
-    total_descent_m: float = Field(ge=0)
-    distance_km: float = Field(ge=0)
+    inefficiency_percent: float = Field(ge=0, le=100)
+
     regen_efficiency_percent: float = Field(ge=0, le=100)
 
     battery_voltage_v: float = Field(gt=0)
@@ -25,6 +27,7 @@ class EnergyResult(BaseModel):
     rolling_energy_kj: float
     air_energy_kj: float
     inertia_energy_kj: float
+    inefficiency_energy_kj: float
     total_energy_kj: float
     total_energy_wh: float
 

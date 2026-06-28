@@ -1,43 +1,66 @@
 from typed_models import SimulationInput, EnergyResult, BatteryResult
 
+AIR_DENSITY = 1.2
+G = 9.81
+
 
 def calculate_energy(data: SimulationInput) -> EnergyResult:
-    g = 9.81
-    speed_ms = data.speed_kmh / 3.6
+    """
+    Расчет энергии движения.
+
+    Параметры
+    ----------
+    mass_kg : масса транспортного средства, кг
+    speed_kmh : средняя скорость, км/ч
+    rolling_resistance_mm : сопротивление качению (смещение центра колеса), мм
+    wheel_radius_mm : радиус колеса, мм
+
+    air_density : плотность воздуха, кг/м³
+    drag_coefficient : коэффициент аэродинамического сопротивления Cx
+    frontal_area_m2 : площадь лобовой поверхности, м²
+    inefficiency_percent : дополнительные потери, %
+
+    total_ascent_m : суммарный подъем, м
+    total_descent_m : суммарный спуск, м
+    distance_km : длина маршрута, км
+
+    regen_efficiency : КПД рекуперации, %
+    """
     distance_m = data.distance_km * 1000
+    speed_ms = data.speed_kmh / 3.6
 
-    U_n_kj = (data.mass_kg * g * data.delta_h_m) / 1000
+    climb_energy = data.mass_kg * G * data.total_ascent_m
 
-    F_rolling = data.rolling_resistance_crr * data.mass_kg * g
-    U_rolling_kj = (F_rolling * distance_m) / 1000
+    rolling_energy = (
+        (data.rolling_resistance_crr / data.wheel_radius_mm)
+        * data.mass_kg
+        * G
+        * distance_m
+    )
 
-    F_air = 0.5 * data.drag_coefficient_cx * data.frontal_area_m2 * 1.2 * (speed_ms**2)
-    U_air_kj = (F_air * distance_m) / 1000
+    air_energy = (
+        0.5
+        * data.drag_coefficient_cx
+        * data.frontal_area_m2
+        * AIR_DENSITY
+        * speed_ms**2
+        * distance_m
+    )
 
-    num_accelerations, accel_distance_m, acceleration_ms2 = 20, 50, 0.5
-    U_inertia_kj = (
-        data.mass_kg * acceleration_ms2 * accel_distance_m * num_accelerations
-    ) / 1000
+    inertia_energy = 0.01 * data.mass_kg * G * distance_m
 
-    total_energy_kj = U_n_kj + U_rolling_kj + U_air_kj + U_inertia_kj
-    total_energy_kj *= 1 + (data.inefficiency_percent / 100)
-
-    if data.total_descent_m > 0:
-        regen_energy = (
-            data.mass_kg
-            * g
-            * data.total_descent_m
-            * (data.regen_efficiency_percent / 100)
-        ) / 1000
-        total_energy_kj = max(total_energy_kj - regen_energy, total_energy_kj * 0.7)
+    total_energy = climb_energy + rolling_energy + air_energy + inertia_energy
+    inefficiency_energy = total_energy * (data.inefficiency_percent / 100)
+    total_energy += inefficiency_energy
 
     return EnergyResult(
-        climb_energy_kj=round(U_n_kj, 1),
-        rolling_energy_kj=round(U_rolling_kj, 1),
-        air_energy_kj=round(U_air_kj, 1),
-        inertia_energy_kj=round(U_inertia_kj, 1),
-        total_energy_kj=round(total_energy_kj, 1),
-        total_energy_wh=round(total_energy_kj / 3.6, 1),
+        climb_energy_kj=round(climb_energy / 1000, 2),
+        rolling_energy_kj=round(rolling_energy / 1000, 2),
+        air_energy_kj=round(air_energy / 1000, 2),
+        inertia_energy_kj=round(inertia_energy / 1000, 2),
+        inefficiency_energy_kj=round(inefficiency_energy / 1000, 2),
+        total_energy_kj=round(total_energy / 1000, 2),
+        total_energy_wh=round(total_energy / 3600, 2),
     )
 
 

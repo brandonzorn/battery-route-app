@@ -58,7 +58,7 @@ function selectPreset(index: number) {
       <input type="number" v-model.number="modelValue.wheel_radius_mm" step="10">
     </div>
     <div class="input-group">
-      <label><i class="fas fa-wind"></i> Cx (аэродинамика)</label>
+      <label><i class="fas fa-wind"></i> Аэродинамическое сопротивление, C<sub>x</sub></label>
       <input type="number" v-model.number="modelValue.drag_coefficient_cx" step="0.05">
     </div>
     <div class="input-group">

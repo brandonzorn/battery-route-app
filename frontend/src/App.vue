@@ -12,7 +12,7 @@ import type { RouteData } from './types/route';
 
 const { currentTheme, initTheme, toggleTheme } = useTheme();
 
-const routeData = reactive<RouteData>({ distance_km: 0, delta_h_m: 0, total_descent_m: 0 });
+const routeData = reactive<RouteData>({ distance_km: 0, total_ascent_m: 0, total_descent_m: 0 });
 const hasRoutePoints = computed(() => routeData.distance_km > 0);
 
 const vehicleConfig = ref<VehicleConfig>({
@@ -46,7 +46,7 @@ async function handleRouteFound(data: { coordinates: any[]; distance: number }) 
 
   try {
     const { ascent, descent } = await fetchElevationProfile(data.coordinates, elevationController.signal);
-    routeData.delta_h_m = ascent;
+    routeData.total_ascent_m = ascent;
     routeData.total_descent_m = descent;
   } catch (e: any) {
     if (e?.name !== "AbortError") {
@@ -73,7 +73,7 @@ function onMapResetComplete() {
   error.value = null;
 
   routeData.distance_km = 0;
-  routeData.delta_h_m = 0;
+  routeData.total_ascent_m = 0;
   routeData.total_descent_m = 0;
   calcResult.value = null;
 }
@@ -109,7 +109,7 @@ async function handleCalculate() {
           <div class="subtitle">Расчет батареи для электротранспорта</div>
         </div>
 
-        <RouteManager :route="routeData" :has-start="hasRoutePoints" :has-end="hasRoutePoints"
+        <RouteManager v-model="routeData" :has-start="hasRoutePoints" :has-end="hasRoutePoints"
           :isElevationLoading="isElevationLoading" :elevation-error="elevationError || error" @reset="triggerReset" />
 
         <VehicleParams v-model="vehicleConfig" />

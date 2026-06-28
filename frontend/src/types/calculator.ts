@@ -22,6 +22,7 @@ export interface CalculationResult {
     rolling_energy_kj: number;
     air_energy_kj: number;
     inertia_energy_kj: number;
+    inefficiency_energy_kj: number;
     total_energy_kj: number;
     total_energy_wh: number;
   };

@@ -2,8 +2,9 @@
 import SidebarSection from "./SidebarSection.vue";
 import type { RouteData } from "../types/route";
 
+const modelValue = defineModel<RouteData>({ required: true });
+
 const props = defineProps<{
-  route: RouteData;
   hasStart: boolean;
   hasEnd: boolean;
   isElevationLoading: boolean;
@@ -24,17 +25,17 @@ defineEmits<{
       • <strong><span class="key-hint">⌘ Cmd</span> + клик</strong> — на Mac
     </div>
 
-    <div v-if="route.distance_km" class="input-group">
+    <div class="input-group">
       <label><i class="fas fa-road"></i> Расстояние, км</label>
-      <input type="number" :value="route.distance_km" step="0.1" readonly>
+      <input type="number" v-model.number="modelValue.distance_km" step="0.1">
     </div>
-    <div v-if="route.delta_h_m" class="input-group">
-      <label><i class="fas fa-mountain"></i> Набор высоты, м</label>
-      <input type="number" :value="route.delta_h_m" step="10" readonly>
+    <div class="input-group">
+      <label><i class="fas fa-arrow-down"></i> Набор высоты, м</label>
+      <input type="number" v-model.number="modelValue.total_ascent_m" step="1">
     </div>
-    <div v-if="route.total_descent_m" class="input-group">
+    <div class="input-group">
       <label><i class="fas fa-mountain"></i> Спуск, м</label>
-      <input type="number" :value="route.total_descent_m" step="10" readonly>
+      <input type="number" v-model.number="modelValue.total_descent_m" step="1">
     </div>
 
     <div v-if="isElevationLoading" class="loading">
@@ -54,7 +55,7 @@ defineEmits<{
       </span>
       <span v-else>
         ✅ <strong>Маршрут построен!</strong><br>
-        📏 Расстояние: {{ props.route.distance_km }} км<br>🗺️ Перетаскивайте карту для навигации
+        📏 Расстояние: {{ modelValue.distance_km }} км<br>🗺️ Перетаскивайте карту для навигации
       </span>
     </div>
 

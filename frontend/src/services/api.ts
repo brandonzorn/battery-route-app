@@ -39,7 +39,7 @@ export async function fetchElevationProfile(coordinates: Coordinate[], signal?: 
   return { ascent: Math.round(ascent), descent: Math.round(descent) };
 }
 
-export async function calculateBattery(payload: VehicleConfig & RouteData, signal?: AbortSignal): Promise<CalculationResult> {
+export async function calculateBattery(payload: RouteData & VehicleConfig, signal?: AbortSignal): Promise<CalculationResult> {
   const response = await api.post<CalculationResult>('/calculate', payload, { signal });
   return response.data;
 }
