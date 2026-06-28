@@ -1,6 +1,8 @@
 import axios from 'axios';
 import type { VehicleConfig, CalculationResult } from '../types/calculator';
 import type { RouteData, Coordinate, Elevation } from '../types/route';
+import { calculateEnergy } from './calculation';
+import { PRESETS } from './vehicles';
 
 
 const API_BASE = import.meta.env.VITE_API_BASE;
@@ -11,7 +13,7 @@ if (API_BASE === undefined) {
 
 const ELEVATION_API_BASE = 'https://api.open-elevation.com/api/v1/';
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE,
 });
 const elevationApi = axios.create({
@@ -39,12 +41,12 @@ export async function fetchElevationProfile(coordinates: Coordinate[], signal?: 
   return { ascent: Math.round(ascent), descent: Math.round(descent) };
 }
 
-export async function calculateBattery(payload: RouteData & VehicleConfig, signal?: AbortSignal): Promise<CalculationResult> {
-  const response = await api.post<CalculationResult>('/calculate', payload, { signal });
-  return response.data;
+export function calculateBattery(payload: RouteData & VehicleConfig): CalculationResult {
+  const response = calculateEnergy(payload);
+  return response;
 }
 
-export async function fetchVehicles(signal?: AbortSignal): Promise<VehicleConfig[]> {
-  const response = await api.get<VehicleConfig[]>('/vehicles', { signal });
-  return response.data;
+export function fetchVehicles(): VehicleConfig[] {
+  const response = PRESETS;
+  return response;
 }
