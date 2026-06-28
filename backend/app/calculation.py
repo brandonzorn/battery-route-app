@@ -32,7 +32,7 @@ def calculate_energy(data: SimulationInput) -> EnergyResult:
     climb_energy = data.mass_kg * G * data.total_ascent_m
 
     rolling_energy = (
-        (data.rolling_resistance_crr / data.wheel_radius_mm)
+        (data.rolling_resistance_lever_mm / data.wheel_radius_mm)
         * data.mass_kg
         * G
         * distance_m
@@ -49,9 +49,18 @@ def calculate_energy(data: SimulationInput) -> EnergyResult:
 
     inertia_energy = 0.01 * data.mass_kg * G * distance_m
 
+    regen_energy = (
+        data.mass_kg
+        * G
+        * data.total_descent_m
+        * (data.regen_efficiency_percent / 100)
+        * 0.5
+    )
+
     total_energy = climb_energy + rolling_energy + air_energy + inertia_energy
     inefficiency_energy = total_energy * (data.inefficiency_percent / 100)
-    total_energy += inefficiency_energy
+
+    total_energy = max(0, total_energy + inefficiency_energy - regen_energy)
 
     return EnergyResult(
         climb_energy_kj=round(climb_energy / 1000, 2),
@@ -59,6 +68,7 @@ def calculate_energy(data: SimulationInput) -> EnergyResult:
         air_energy_kj=round(air_energy / 1000, 2),
         inertia_energy_kj=round(inertia_energy / 1000, 2),
         inefficiency_energy_kj=round(inefficiency_energy / 1000, 2),
+        regen_energy_kj=round(regen_energy / 1000, 2),
         total_energy_kj=round(total_energy / 1000, 2),
         total_energy_wh=round(total_energy / 3600, 2),
     )

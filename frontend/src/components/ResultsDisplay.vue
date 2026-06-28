@@ -37,6 +37,10 @@ defineProps<{
         <span class="result-value">{{ result.energy.inefficiency_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
+        <span class="result-label"><i class="fas fa-rocket"></i> Рекуперация:</span>
+        <span class="result-value">{{ result.energy.regen_energy_kj }} кДж</span>
+      </div>
+      <div class="result-item">
         <span class="result-label"><strong>Всего энергии:</strong></span>
         <span class="result-value">
           <strong>{{ result.energy.total_energy_kj }} кДж / {{ result.energy.total_energy_wh }} Вт·ч</strong>

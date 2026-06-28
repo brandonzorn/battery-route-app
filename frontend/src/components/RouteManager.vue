@@ -29,11 +29,11 @@ defineEmits<{
       <label><i class="fas fa-road"></i> Расстояние, км</label>
       <input type="number" v-model.number="modelValue.distance_km" step="0.1">
     </div>
-    <div class="input-group">
+    <div v-if="!isElevationLoading" class="input-group">
       <label><i class="fas fa-arrow-down"></i> Набор высоты, м</label>
       <input type="number" v-model.number="modelValue.total_ascent_m" step="1">
     </div>
-    <div class="input-group">
+    <div v-if="!isElevationLoading" class="input-group">
       <label><i class="fas fa-mountain"></i> Спуск, м</label>
       <input type="number" v-model.number="modelValue.total_descent_m" step="1">
     </div>

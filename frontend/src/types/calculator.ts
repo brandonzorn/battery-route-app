@@ -3,7 +3,7 @@ export interface VehicleConfig {
   name: string;
   mass_kg: number;
   speed_kmh: number;
-  rolling_resistance_crr: number;
+  rolling_resistance_lever_mm: number;
   wheel_radius_mm: number;
   drag_coefficient_cx: number;
   frontal_area_m2: number;
@@ -23,6 +23,7 @@ export interface CalculationResult {
     air_energy_kj: number;
     inertia_energy_kj: number;
     inefficiency_energy_kj: number;
+    regen_energy_kj: number;
     total_energy_kj: number;
     total_energy_wh: number;
   };

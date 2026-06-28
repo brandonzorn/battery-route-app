@@ -50,8 +50,8 @@ function selectPreset(index: number) {
       <input type="number" v-model.number="modelValue.speed_kmh" step="5">
     </div>
     <div class="input-group">
-      <label><i class="fas fa-tire"></i> Трение качения, мм</label>
-      <input type="number" v-model.number="modelValue.rolling_resistance_crr" step="0.5">
+      <label><i class="fas fa-tire"></i> Плечо сопротивления качению, мм</label>
+      <input type="number" v-model.number="modelValue.rolling_resistance_lever_mm" step="0.005">
     </div>
     <div class="input-group">
       <label><i class="fas fa-circle"></i> Радиус колеса, мм</label>

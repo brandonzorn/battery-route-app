@@ -8,7 +8,7 @@ class SimulationInput(BaseModel):
 
     mass_kg: float = Field(gt=0)
     speed_kmh: float = Field(ge=0)
-    rolling_resistance_crr: float = Field(ge=0)
+    rolling_resistance_lever_mm: float = Field(ge=0)
     wheel_radius_mm: float = Field(gt=0)
     drag_coefficient_cx: float = Field(ge=0)
     frontal_area_m2: float = Field(gt=0)
@@ -28,6 +28,7 @@ class EnergyResult(BaseModel):
     air_energy_kj: float
     inertia_energy_kj: float
     inefficiency_energy_kj: float
+    regen_energy_kj: float
     total_energy_kj: float
     total_energy_wh: float
 
