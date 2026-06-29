@@ -2,12 +2,12 @@ import axios from 'axios';
 import type { VehicleConfig, CalculationResult } from '../types/calculator';
 import type { RouteData, Coordinate, Elevation } from '../types/route';
 import { calculateEnergy } from './calculation';
-import { PRESETS } from './vehicles';
+import { getDb } from '../db/database';
 
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
-if (API_BASE === undefined) {
+if (!API_BASE) {
   throw Error("API_BASE env variable not found")
 }
 
@@ -46,7 +46,13 @@ export function calculateBattery(payload: RouteData & VehicleConfig): Calculatio
   return response;
 }
 
-export function fetchVehicles(): VehicleConfig[] {
-  const response = PRESETS;
-  return response;
+export async function fetchVehicles(signal?: AbortSignal): Promise<VehicleConfig[]> {
+  const db = getDb();
+  const result = await db.select<VehicleConfig[]>("SELECT * FROM vehicle");
+
+  if (signal?.aborted) {
+    throw new DOMException("Aborted", "AbortError");
+  }
+
+  return result;
 }

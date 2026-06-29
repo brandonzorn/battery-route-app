@@ -1,4 +1,6 @@
 export interface VehicleConfig {
+  id?: number;
+
   kind: string;
   name: string;
   mass_kg: number;

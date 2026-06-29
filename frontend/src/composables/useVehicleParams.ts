@@ -17,7 +17,7 @@ export function useVehicleParams() {
       isLoading.value = true;
       error.value = null;
 
-      vehicles.value = fetchVehicles();
+      vehicles.value = await fetchVehicles(controller.signal);
     } catch (e: any) {
       if (e?.name !== "AbortError") {
         error.value = e?.message ?? "Неизвестная ошибка";
