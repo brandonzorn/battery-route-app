@@ -12,11 +12,12 @@ function getVehicleIcon(kind: string): string {
     case 'bike': return 'fas fa-bicycle';
     case 'car': return 'fas fa-car';
     case 'scooter': return 'fas fa-motorcycle';
-    default: return 'fas fa-transportation';
+    default: return 'fas fa-shuttle-van';
   }
 }
 
 function selectPreset(index: number) {
+  if (!vehicles.value?.[index]) return;
   modelValue.value = {
     ...modelValue.value,
     ...vehicles.value[index]
@@ -26,18 +27,18 @@ function selectPreset(index: number) {
 
 <template>
   <SidebarSection title="Транспортное средство" icon="fas fa-motorcycle">
-    <div v-if="vehicles" class="preset-buttons">
+    <div v-if="vehicles.length" class="preset-buttons">
       <button v-for="(vehicle, index) in vehicles" :key="index" class="preset-btn" @click="selectPreset(index)"
         type="button">
         <i :class="getVehicleIcon(vehicle.kind)"></i> {{ vehicle.name }}
       </button>
     </div>
 
-    <div v-if="isLoading" class="result-card loading">
+    <div v-else-if="isLoading" class="result-card loading">
       <div class="text-center">⏳ Получение ...</div>
     </div>
 
-    <div v-if="error" class="result-card error">
+    <div v-else class="result-card error">
       <div class="text-center">❌ Ошибка: {{ error }}</div>
     </div>
 

@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
+const VITE_CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY;
+
 const props = defineProps<{
   theme: 'light' | 'dark';
   shouldReset: boolean;
@@ -67,10 +69,10 @@ function updateTiles(theme: 'light' | 'dark') {
   if (!mapInstance) return;
   if (tileLayerInstance) mapInstance.removeLayer(tileLayerInstance);
 
-  tileLayerInstance = L.tileLayer(MAP_TILES[theme], {
-    attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
+  tileLayerInstance = L.tileLayer(`${MAP_TILES[theme]}?key=${VITE_CARTO_API_KEY}`, {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
     className: 'map-tiles',
-    maxZoom: 19,
+    maxZoom: 20,
   }).addTo(mapInstance);
 }
 

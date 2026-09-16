@@ -1,6 +1,6 @@
 import axios from 'axios';
-import type { VehicleConfig, CalculationResult } from '../types/calculator';
-import type { RouteData, Coordinate, Elevation } from '../types/route';
+import type { CalculationResult, VehicleConfig } from '../types/calculator';
+import type { Coordinate, Elevation, RouteData } from '../types/route';
 import { calculateEnergy } from './calculation';
 import { getDb } from '../db/database';
 
@@ -42,8 +42,7 @@ export async function fetchElevationProfile(coordinates: Coordinate[], signal?: 
 }
 
 export function calculateBattery(payload: RouteData & VehicleConfig): CalculationResult {
-  const response = calculateEnergy(payload);
-  return response;
+  return calculateEnergy(payload);
 }
 
 export async function fetchVehicles(signal?: AbortSignal): Promise<VehicleConfig[]> {

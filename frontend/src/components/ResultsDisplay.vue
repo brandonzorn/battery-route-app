@@ -21,7 +21,7 @@ defineProps<{
         <span class="result-value">{{ result.energy.climb_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
-        <span class="result-label"><i class="fas fa-tire"></i> Трение качения:</span>
+        <span class="result-label"><i class="fas fa-circle-notch"></i> Трение качения:</span>
         <span class="result-value">{{ result.energy.rolling_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
@@ -33,11 +33,11 @@ defineProps<{
         <span class="result-value">{{ result.energy.inertia_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
-        <span class="result-label"><i class="fas fa-rocket"></i> Неучтенные потери:</span>
+        <span class="result-label"><i class="fas fa-exclamation-triangle"></i> Неучтенные потери:</span>
         <span class="result-value">{{ result.energy.inefficiency_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
-        <span class="result-label"><i class="fas fa-rocket"></i> Рекуперация:</span>
+        <span class="result-label"><i class="fas fa-undo-alt"></i> Рекуперация:</span>
         <span class="result-value">{{ result.energy.regen_energy_kj }} кДж</span>
       </div>
       <div class="result-item">
@@ -55,7 +55,7 @@ defineProps<{
         <span class="result-value">{{ result.battery.total_efficiency_percent }}%</span>
       </div>
       <div class="result-item">
-        <span class="result-label"><i class="fas fa-database"></i> Энергия с потерями:</span>
+        <span class="result-label"><i class="fas fa-plug"></i> Энергия с потерями:</span>
         <span class="result-value">{{ result.battery.required_energy_wh }} Вт·ч</span>
       </div>
       <div class="big-result">
@@ -67,5 +67,8 @@ defineProps<{
       </div>
       <div class="note">* С учетом потерь при зарядке (ЗУ, BMS, нагрев)</div>
     </div>
+  </div>
+  <div v-else class="result-card placeholder">
+    <div class="text-center">Введите параметры и нажмите «Рассчитать»</div>
   </div>
 </template>
