@@ -4,18 +4,8 @@ import type { Coordinate, Elevation, RouteData } from '../types/route';
 import { calculateEnergy } from './calculation';
 import { getDb } from '../db/database';
 
-
-const API_BASE = import.meta.env.VITE_API_BASE;
-
-if (!API_BASE) {
-  throw Error("API_BASE env variable not found")
-}
-
 const ELEVATION_API_BASE = 'https://api.open-elevation.com/api/v1/';
 
-export const api = axios.create({
-  baseURL: API_BASE,
-});
 const elevationApi = axios.create({
   baseURL: ELEVATION_API_BASE
 });
@@ -23,9 +13,11 @@ const elevationApi = axios.create({
 export async function fetchElevationProfile(coordinates: Coordinate[], signal?: AbortSignal): Promise<Elevation> {
   const points = coordinates.filter((_, i) => i % 10 === 0).slice(0, 25);
 
-  const response = await elevationApi.post<{ results: { elevation: number }[] }>("/lookup", {
-    locations: points.map(p => ({ latitude: p.lat, longitude: p.lng }))
-  }, { signal }
+  const response = await elevationApi.post<{ results: { elevation: number }[] }>(
+    "/lookup", {
+      locations: points.map(p => ({ latitude: p.lat, longitude: p.lng }))
+    },
+    { signal }
   );
 
   const elevations = response.data.results.map(r => r.elevation);

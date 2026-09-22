@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
-const VITE_CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY;
+const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY;
 
 const props = defineProps<{
   theme: 'light' | 'dark';
@@ -52,7 +52,7 @@ onUnmounted(() => {
   resizeObserver?.disconnect();
   if (mapInstance) {
     mapInstance.off('click', onMapClick);
-    if (routingControl) mapInstance.removeControl(routingControl);
+    clearMap();
     mapInstance.remove();
   }
 });
@@ -69,7 +69,8 @@ function updateTiles(theme: 'light' | 'dark') {
   if (!mapInstance) return;
   if (tileLayerInstance) mapInstance.removeLayer(tileLayerInstance);
 
-  tileLayerInstance = L.tileLayer(`${MAP_TILES[theme]}?key=${VITE_CARTO_API_KEY}`, {
+  const tileUrl = CARTO_API_KEY ? `${ MAP_TILES[theme] }?key=${ CARTO_API_KEY }` : MAP_TILES[theme];
+  tileLayerInstance = L.tileLayer(tileUrl, {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
     className: 'map-tiles',
     maxZoom: 20,
@@ -77,18 +78,27 @@ function updateTiles(theme: 'light' | 'dark') {
 }
 
 function onMapClick(e: L.LeafletMouseEvent) {
+  if (startPoint.value && endPoint.value) {
+    showTempPopup(e.latlng, '⚠️ Маршрут уже построен! Нажмите <strong>Сбросить</strong>');
+    return;
+  }
+
   const isCtrlPressed = e.originalEvent.ctrlKey || e.originalEvent.metaKey;
   if (!isCtrlPressed) {
     showTempPopup(e.latlng, '💡 Для установки точки нажмите <strong>Ctrl + клик</strong>');
     return;
   }
+
   if (!startPoint.value) {
     setStartPoint(e.latlng);
-  } else if (!endPoint.value) {
-    setEndPoint(e.latlng);
-  } else {
-    showTempPopup(e.latlng, '⚠️ Маршрут уже построен! Нажмите "Сбросить"');
+    return;
   }
+  if (!endPoint.value) {
+    setEndPoint(e.latlng);
+    return;
+  }
+
+  showTempPopup(e.latlng, '❌ Не удалось установить точку. Произошла неизвестная ошибка.');
 }
 
 function setStartPoint(latlng: L.LatLng) {
@@ -123,7 +133,7 @@ function buildRoute() {
     createMarker: () => false,
     addWaypoints: false,
     draggableWaypoints: false
-  });
+  } as L.Routing.PlanOptions);
 
   routingControl = L.Routing.control({
     routeWhileDragging: false,
@@ -133,13 +143,13 @@ function buildRoute() {
     lineOptions: {
       styles: [{ className: "route-line" }],
       addWaypoints: false
-    } as any,
-    router: (L.Routing).osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
+    } as L.Routing.LineOptions,
+    router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' })
   }).addTo(mapInstance);
 
   routingControl.on('routesfound', (event: any) => {
     const route: L.Routing.IRoute = event.routes[0];
-    if (!route.summary || !route.coordinates) {
+    if (!route?.summary || !route?.coordinates) {
       emit('routing-error', "Маршрутные данные отсутствуют");
       return;
     }
@@ -154,9 +164,19 @@ function buildRoute() {
 
 function clearMap() {
   if (!mapInstance) return;
-  if (routingControl) { mapInstance.removeControl(routingControl); routingControl = null; }
-  if (startMarker) { mapInstance.removeLayer(startMarker); startMarker = null; }
-  if (endMarker) { mapInstance.removeLayer(endMarker); endMarker = null; }
+
+  if (routingControl) {
+    mapInstance.removeControl(routingControl);
+    routingControl = null;
+  }
+  if (startMarker) {
+    mapInstance.removeLayer(startMarker);
+    startMarker = null;
+  }
+  if (endMarker) {
+    mapInstance.removeLayer(endMarker);
+    endMarker = null;
+  }
 
   startPoint.value = null;
   endPoint.value = null;

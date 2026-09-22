@@ -86,7 +86,7 @@ async function handleCalculate() {
 
   isLoading.value = true;
   try {
-    calcResult.value = await calculateBattery({
+    calcResult.value = calculateBattery({
       ...vehicleConfig.value,
       ...routeData.value
     });

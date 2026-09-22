@@ -148,7 +148,6 @@ input[readonly] {
   border-radius: var(--radius-md);
   transition: var(--transition-smooth);
   padding: 10px 14px;
-
   flex-shrink: 1;
   white-space: nowrap;
 }
@@ -294,19 +293,19 @@ input[readonly] {
 }
 
 .marker {
-  width:14px;
-  height:14px;
-  border-radius:50%;
-  border:2px solid white;
-  box-shadow:0 0 4px rgba(0,0,0,0.3);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 }
 
 .marker-start {
-  background-color:#10b981;
+  background-color: #10b981;
 }
 
 .marker-end {
-  background-color:#ef4444;
+  background-color: #ef4444;
 }
 
 .route-line {
